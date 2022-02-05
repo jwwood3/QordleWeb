@@ -1,7 +1,7 @@
 let DATA = {
 	"WORDLENGTH": 5,
 	"MAXATTEMPTS": 8,
-	"ENDPOINT": "http://localhost:3000/api",
+	"ENDPOINT": "http://ec2-44-201-200-247.compute-1.amazonaws.com:3000/api",
 	"signals":{
 		"guessWord": "GUESS_WORD"
 	}
