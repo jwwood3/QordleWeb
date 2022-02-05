@@ -1,0 +1,36 @@
+#guessContainer, #letterContainer{
+	width:100%;
+	height:50%;
+	text-align: center;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	justify-content: space-evenly;
+	align-items: stretch;
+	align-content: space-around;
+	margin: 10px;
+}
+
+.guesses, .letters{
+	flex-grow: 1;
+	display:inline-block;
+}
+
+.letterBox{
+	border: solid 1px;
+	font-family: monospace;
+	font-size: 15pt;
+}
+
+.letterBox.close{
+	background-color: yellow;
+}
+
+.letterBox.correct{
+	background-color: green;
+}
+
+.letterBox.wrong{
+	background-color: #282828;
+}
+
