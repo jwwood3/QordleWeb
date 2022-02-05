@@ -441,7 +441,7 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 	model.register(letter2.render);
 	model.register(letter3.render);
 	model.register(letter4.render);
-
+//hmm
 	document.onkeydown = function(evt) {
 		console.log("key: "+evt.keyCode);
 		evt = evt || window.event;
