@@ -36,13 +36,13 @@ var makeModel = function(){
 		"register": function(observerFunction){
 			_observers.add(observerFunction);
 		},
-		
+
 		"guess": async function(newGuess){
 			await this.checkWord(newGuess)
 				.then(response=>response.json())
 				.then(jsonVal=>this.guessEnd(jsonVal,newGuess));
 		},
-		
+
 		"guessEnd": function(jVal, word){
 			if(jVal[0]==0){
 				var newGuess = word.toUpperCase();
@@ -61,7 +61,7 @@ var makeModel = function(){
 			}
 			_observers.notify();
 		},
-		
+
 		"compare": function(guessWord,correctWord){
 			let UCGuess = guessWord.trim().toUpperCase();
 			let UCWord = correctWord.trim().toUpperCase();
@@ -87,7 +87,7 @@ var makeModel = function(){
 			}
 			return comps;
 		},
-		
+
 		//Accuracy is an array with one entry per guess
 		//Each entry is an array of length four. One for each word.
 		//These entries are all 5 letters long and have + for correct letters,
@@ -112,7 +112,7 @@ var makeModel = function(){
 				}
 			}
 		},
-		
+
 		"checkCorrect": function(){
 			for(var i=0;i<4;i++){
 				let isCorrect = 1;
@@ -126,21 +126,21 @@ var makeModel = function(){
 				}
 			}
 		},
-		
+
 		"checkWord": async function(word){
 			return fetch(new Request(DATA.ENDPOINT+"?ask=check&word="+word))
 		},
-		
+
 		"getRandomWord": async function(num){
 			return fetch(new Request(DATA.ENDPOINT+"?ask=request&count="+num))
 		},
-		
+
 		"setAnswerWords": async function(){
 			await this.getRandomWord(4)
 				.then(response=>response.json())
 				.then(jval=>{_correctAnswers = jval; console.log(jval);});
 		},
-		
+
 		"resetData": function(){
 			_attempts = [];
 			_recentError = "";
@@ -156,27 +156,27 @@ var makeModel = function(){
 			_accuracy = [];
 			_observers.notify();
 		},
-		
+
 		"getAnswer": function(){
 			return _correctAnswers;
 		},
-		
+
 		"getAccuracy": function(){
 			return _accuracy;
 		},
-		
+
 		"getLetters": function(){
 			return _letters;
 		},
-		
+
 		"getAttempts": function(){
 			return _attempts;
 		},
-		
+
 		"getError": function(){
 			return _recentError;
 		},
-		
+
 		"hasWon": function(){
 			if(_canLose && _attemptsLeft==0){
 				return -1;
@@ -191,7 +191,7 @@ var makeModel = function(){
 
 var makeController = function(model){
 	var _model = model;
-	
+
 	return{
 		"dispatch": async function(evt){
 			switch(evt.type){
@@ -238,6 +238,7 @@ var makeLetters = function(divId,format){
 		var s = document.createElement("span");
 		s.setAttribute("class","letterBox");
 		s.innerHTML = word[i];
+		s.setAttribute("data-contents",word[i]);
 		if(format[i]=="+"){
 			s.classList.add("correct");
 		}
@@ -249,6 +250,11 @@ var makeLetters = function(divId,format){
 		}
 		d.appendChild(s);
 	}
+	var s = document.createElement("span");
+	s.setAttribute("class","letterBox");
+	s.innerHTML = "BACK";
+	s.setAttribute("data-contents","BACK");
+	d.appendChild(s);
 }
 
 var makeGuessView = function(model,divId,num){
@@ -313,6 +319,18 @@ var makeLetterView = function(model,divId,num){
 				box.firstChild.remove();
 			}
 			makeLetters(_id,_letterFormat[_index]);
+			for(var i=0;i<box.children.length;i++){
+				if(box.children[i].getAttribute("data-contents").length==1){
+					box.children[i].addEventListener("click",function(e){
+						console.log(e.target.getAttribute("data-contents"));
+						document.dispatchEvent(new KeyboardEvent('keydown',{'keyCode':e.target.getAttribute("data-contents").charCodeAt(0)}));
+					});
+				}
+			}
+			box.children[box.children.length-1].addEventListener("click",function(){
+				console.log("back");
+				document.dispatchEvent(new KeyboardEvent('keydown',{'keyCode':8}));
+			});
 		},
 		"getIndex": function(){
 			return _index;
@@ -388,43 +406,44 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 	var guess2 = makeGuessView(model,"guess2",1);
 	var guess3 = makeGuessView(model,"guess3",2);
 	var guess4 = makeGuessView(model,"guess4",3);
-	
+
 	guess1.render();
 	guess2.render();
 	guess3.render();
 	guess4.render();
-	
+
 	var letter1 = makeLetterView(model,"letter1",0);
 	var letter2 = makeLetterView(model,"letter2",1);
 	var letter3 = makeLetterView(model,"letter3",2);
 	var letter4 = makeLetterView(model,"letter4",3);
-	
+
 	letter1.render();
 	letter2.render();
 	letter3.render();
 	letter4.render();
-	
+
 	var btn = makeGuessButton(model,"btnDiv",guess1,guess2,guess3,guess4);
-	
+
 	var Ebox = makeErrorBox(model,"errBox");
-	
+
 	btn.register(controller.dispatch);
-	
+
 	model.register(btn.render);
-	
+
 	model.register(Ebox.render);
-	
+
 	model.register(guess1.render);
 	model.register(guess2.render);
 	model.register(guess3.render);
 	model.register(guess4.render);
-	
+
 	model.register(letter1.render);
 	model.register(letter2.render);
 	model.register(letter3.render);
 	model.register(letter4.render);
-	
+
 	document.onkeydown = function(evt) {
+		console.log("key: "+evt.keyCode);
 		evt = evt || window.event;
 		if (evt.keyCode >= 65 && evt.keyCode <= 90) {
 			guess1.addLetter(String.fromCharCode(evt.keyCode));
@@ -443,6 +462,17 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 			guess2.removeLetter();
 			guess3.removeLetter();
 			guess4.removeLetter();
+		}
+		if (evt.keyCode == 13) {
+			var guess = guess1.getLetters();
+			guess1.clearLetters();
+			guess2.clearLetters();
+			guess3.clearLetters();
+			guess4.clearLetters();
+			controller.dispatch({
+				"type": DATA.signals.guessWord,
+				"word": guess
+			});
 		}
 	};
 });

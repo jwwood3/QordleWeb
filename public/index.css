@@ -11,15 +11,25 @@
 	margin: 10px;
 }
 
-.guesses, .letters{
+.guesses{
 	flex-grow: 1;
 	display:inline-block;
+	font-size: 50pt;
+}
+
+.letters{
+	display: flex;
+	flex-wrap: wrap;
+	column-gap: 5px;
+	row-gap: 5px;
+	font-size: 31pt;
+	margin: 10px;
 }
 
 .letterBox{
 	border: solid 1px;
 	font-family: monospace;
-	font-size: 15pt;
+	font-size: inherit;
 }
 
 .letterBox.close{
@@ -30,7 +40,12 @@
 	background-color: green;
 }
 
+#submitButton{
+	width: 30%;
+	margin-left: 35%;
+	font-size: 35pt;
+}
+
 .letterBox.wrong{
 	background-color: #282828;
 }
-
