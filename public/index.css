@@ -4,7 +4,7 @@ html{
 body{
 	background-color: black;
 }
-#guessContainer, #letterContainer{
+#guessContainer{
 	width:100%;
 	height:50%;
 	text-align: center;
@@ -12,24 +12,36 @@ body{
 	flex-direction: row;
 	flex-wrap: nowrap;
 	justify-content: space-evenly;
-	align-items: stretch;
-	align-content: space-around;
+	align-items: center;
+	align-content: center;
 	margin: 10px;
 }
 
 .guesses{
 	flex-grow: 1;
-	display:inline-block;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 	font-size: 50pt;
+	margin: 10px;
+	width: 95%;
 }
 
-.letters{
+.guessLine {
+	display: flex;
+	flex-direction: row;
+	justify-content: center;
+}
+
+#letters{
 	display: flex;
 	flex-wrap: wrap;
-	column-gap: 5px;
-	row-gap: 5px;
-	font-size: 31pt;
-	margin: 10px;
+	font-size: 100pt;
+	margin: auto;
+	width: 95%;
+	justify-content: center;
+	justify-items: center;
+	align-items: center;
 }
 
 .letterBox{
@@ -37,6 +49,8 @@ body{
 	font-family: monospace;
 	font-size: inherit;
 	color: white;
+	width: min-content;
+	height: min-content;
 }
 
 .letterBox.close{
@@ -47,9 +61,9 @@ body{
 	background-color: green;
 }
 
-#submitButton{
+#submitButton, #exportButton{
 	width: 30%;
-	margin-left: 35%;
+	margin: 50px auto auto auto;
 	font-size: 35pt;
 	background-color: black;
 	border: solid 2px white;
@@ -57,7 +71,28 @@ body{
 	color: white;
 }
 
+#exportButton.dis{
+	display: none;
+}
+
+#exportButton.en{
+	display: inline;
+}
+
 .letterBox.wrong{
 	background-color: black;
 	color: #4a4a4a;
+}
+
+#errBox {
+	color: white;
+	text-align: center;
+	width: 100%;
+	font-size: 50pt;
+	margin-top:20px;
+}
+
+#btnDiv {
+	width: 100%;
+	text-align: center;
 }

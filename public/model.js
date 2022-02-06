@@ -3,7 +3,9 @@ let DATA = {
 	"MAXATTEMPTS": 8,
 	"ENDPOINT": "http://ec2-44-201-200-247.compute-1.amazonaws.com:3000/api",
 	"signals":{
-		"guessWord": "GUESS_WORD"
+		"guessWord": "GUESS_WORD",
+		"EXPORT": "EXPORT",
+		"restart": "RESTART"
 	}
 }
 var makeSignaller = function() {
@@ -20,6 +22,7 @@ var makeSignaller = function() {
 var makeModel = function(){
 	var _attempts = [];
 	var _attemptsLeft = DATA.MAXATTEMPTS;
+	var _numAttempts = 0;
 	var _correctAnswers = [];
 	var _hasGuessed = [0,0,0,0];
 	var _letters = [[],[],[],[]];
@@ -47,11 +50,13 @@ var makeModel = function(){
 			if(jVal[0]==0){
 				var newGuess = word.toUpperCase();
 				_attempts.push(newGuess);
-				_accuracy.push([this.compare(newGuess,_correctAnswers[0]),this.compare(newGuess,_correctAnswers[1]),
-				this.compare(newGuess,_correctAnswers[2]),this.compare(newGuess,_correctAnswers[3])]);
+				_accuracy.push([this.compare(newGuess,_correctAnswers[0],0),this.compare(newGuess,_correctAnswers[1],1),
+				this.compare(newGuess,_correctAnswers[2],2),this.compare(newGuess,_correctAnswers[3],3)]);
 				this.setLetters();
 				this.checkCorrect();
 				_recentError = "";
+				_numAttempts = _numAttempts + 1;
+				_attemptsLeft = _attemptsLeft - 1;
 			} else if(jVal[0]==1){
 				_recentError = ""+word+" is not a recognized word";
 			} else if(jVal[0]==2){
@@ -62,7 +67,14 @@ var makeModel = function(){
 			_observers.notify();
 		},
 
-		"compare": function(guessWord,correctWord){
+		"compare": function(guessWord,correctWord,index){
+			if(_hasGuessed[index]!=0){
+				let ret = []
+				for(var i=0;i<DATA.WORDLENGTH;i++){
+					ret.push("_");
+				}
+				return ret;
+			}
 			let UCGuess = guessWord.trim().toUpperCase();
 			let UCWord = correctWord.trim().toUpperCase();
 			let UCGuessAr = UCGuess.split('');
@@ -145,6 +157,7 @@ var makeModel = function(){
 			_attempts = [];
 			_recentError = "";
 			_attemptsLeft = DATA.MAXATTEMPTS;
+			_numAttempts = 0;
 			_correctAnswers = [];
 			_hasGuessed = [0,0,0,0];
 			_letters = [[],[],[],[]];
@@ -156,7 +169,38 @@ var makeModel = function(){
 			_accuracy = [];
 			_observers.notify();
 		},
+		
+		"getShare": function(){
+			var GB = ":green_square:"
+			var BB = ":black_large_square:"
+			var YB = ":purple_square:"
+			
+			var ret = "Qordle in "+_numAttempts+"\n";
+			for(var i=0;i<_attempts.length;i++){
+				for(var j=0;j<_accuracy[i].length;j++){
+					for(var k=0;k<_accuracy[i][j].length;k++){
+						if(_accuracy[i][j][k]=="+"){
+							ret+=GB;
+						} else if(_accuracy[i][j][k]=="-"){
+							ret+=YB;
+						} else if(_accuracy[i][j][k]=="." || _accuracy[i][j][k]=="_"){
+							ret+=BB;
+						}
+					}
+					ret+=" "
+				}
+				ret+=" ||`"+_attempts[i]+"`||\n"
+			}
+			ret+="\nQordle: http://ec2-44-201-200-247.compute-1.amazonaws.com:3000/index";
+			console.log(ret);
+			return ret;
+		},
 
+		"setCopied": function(){
+			_recentError = "Copied to Clipboard";
+			_observers.notify();
+		},
+		
 		"getAnswer": function(){
 			return _correctAnswers;
 		},
@@ -202,6 +246,9 @@ var makeController = function(model){
 					_model.resetData();
 					await _model.setAnswerWords();
 					break;
+				case (DATA.signals.EXPORT):
+					_model.setCopied();
+					break;
 				default:
 					console.log("Unrecognized event", evt);
 					break;
@@ -234,18 +281,31 @@ var makeWordLine = function(word,classVal,format){
 var makeLetters = function(divId,format){
 	var d = document.getElementById(divId);
 	var word = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	rFormat = []
 	for(var i=0;i<word.length;i++){
 		var s = document.createElement("span");
 		s.setAttribute("class","letterBox");
 		s.innerHTML = word[i];
 		s.setAttribute("data-contents",word[i]);
-		if(format[i]=="+"){
+		rFormat.push(".");
+		for(var j=0;j<format.length;j++){
+			if(format[j][i]=="+"){
+				rFormat[i]="+";
+			}
+			if(format[j][i]=="-" && rFormat[i]!="+"){
+				rFormat[i]="-";
+			}
+			if(format[j][i]=="_" && rFormat[i]=="."){
+				rFormat[i]="_";
+			}
+		}
+		if(rFormat[i]=="+"){
 			s.classList.add("correct");
 		}
-		if(format[i]=="-"){
+		if(rFormat[i]=="-"){
 			s.classList.add("close");
 		}
-		if(format[i]=="_"){
+		if(rFormat[i]=="_"){
 			s.classList.add("wrong");
 		}
 		d.appendChild(s);
@@ -302,10 +362,9 @@ var makeGuessView = function(model,divId,num){
 	}
 }
 
-var makeLetterView = function(model,divId,num){
+var makeLetterView = function(model,divId){
 	var _model = model;
 	var _observers = makeSignaller();
-	var _index = num;
 	var _id = divId;
 	var _letterFormat = model.getLetters();
 	return{
@@ -318,7 +377,7 @@ var makeLetterView = function(model,divId,num){
 			while(box.firstChild){
 				box.firstChild.remove();
 			}
-			makeLetters(_id,_letterFormat[_index]);
+			makeLetters(_id,_letterFormat);
 			for(var i=0;i<box.children.length;i++){
 				if(box.children[i].getAttribute("data-contents").length==1){
 					box.children[i].addEventListener("click",function(e){
@@ -334,6 +393,38 @@ var makeLetterView = function(model,divId,num){
 		},
 		"getIndex": function(){
 			return _index;
+		}
+	}
+}
+
+var makeExportButton = function(model,divId){
+	var _model = model;
+	var _id = divId;
+	var _observers = makeSignaller();
+	var _btn = document.createElement("input");
+	_btn.setAttribute("id","exportButton");
+	_btn.setAttribute("type","button");
+	_btn.setAttribute("value","Share");
+	_btn.setAttribute("class","dis");
+	var _shareFunc = function(){
+		var s = _model.getShare();
+		navigator.clipboard.writeText(s);
+		_observers.notify({
+			"type": DATA.signals.EXPORT
+		});
+	}
+	_btn.addEventListener("click",_shareFunc);
+	document.getElementById(divId).appendChild(_btn);
+	return {
+		"register": function(observer_function){
+			_observers.add(observer_function);
+		},
+		"render": function(){
+			if(_model.hasWon()!=0){
+				_btn.setAttribute("class","en");
+			} else {
+				_btn.setAttribute("class","dis");
+			}
 		}
 	}
 }
@@ -412,23 +503,20 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 	guess3.render();
 	guess4.render();
 
-	var letter1 = makeLetterView(model,"letter1",0);
-	var letter2 = makeLetterView(model,"letter2",1);
-	var letter3 = makeLetterView(model,"letter3",2);
-	var letter4 = makeLetterView(model,"letter4",3);
+	var letters = makeLetterView(model,"letters");
 
-	letter1.render();
-	letter2.render();
-	letter3.render();
-	letter4.render();
+	letters.render();
 
 	var btn = makeGuessButton(model,"btnDiv",guess1,guess2,guess3,guess4);
+	var btn2 = makeExportButton(model,"btnDiv");
 
 	var Ebox = makeErrorBox(model,"errBox");
 
 	btn.register(controller.dispatch);
+	btn2.register(controller.dispatch);
 
 	model.register(btn.render);
+	model.register(btn2.render);
 
 	model.register(Ebox.render);
 
@@ -437,10 +525,7 @@ document.addEventListener("DOMContentLoaded", async function(event) {
 	model.register(guess3.render);
 	model.register(guess4.render);
 
-	model.register(letter1.render);
-	model.register(letter2.render);
-	model.register(letter3.render);
-	model.register(letter4.render);
+	model.register(letters.render);
 //hmm
 	document.onkeydown = function(evt) {
 		console.log("key: "+evt.keyCode);
