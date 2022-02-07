@@ -1,3 +1,9 @@
+html{
+	background-color: black;
+}
+body{
+	background-color: black;
+}
 #guessContainer, #letterContainer{
 	width:100%;
 	height:50%;
@@ -27,13 +33,14 @@
 }
 
 .letterBox{
-	border: solid 2px;
+	border: solid 2px white;
 	font-family: monospace;
 	font-size: inherit;
+	color: white;
 }
 
 .letterBox.close{
-	background-color: yellow;
+	background-color: #5d00ff;
 }
 
 .letterBox.correct{
@@ -44,8 +51,13 @@
 	width: 30%;
 	margin-left: 35%;
 	font-size: 35pt;
+	background-color: black;
+	border: solid 2px white;
+	border-radius: 15px;
+	color: white;
 }
 
 .letterBox.wrong{
-	background-color: #282828;
+	background-color: black;
+	color: #4a4a4a;
 }
